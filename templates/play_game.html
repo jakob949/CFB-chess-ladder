@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Play Game</title>
+</head>
+<body>
+    <form action="/play_game" method="post">
+        <select name="winner" required>
+            <option value="">Select Winner</option>
+            {% for player in players %}
+            <option value="{{ player }}">{{ player }}</option>
+            {% endfor %}
+        </select>
+        <select name="loser" required>
+            <option value="">Select Loser</option>
+            {% for player in players %}
+            <option value="{{ player }}">{{ player }}</option>
+            {% endfor %}
+        </select>
+        <input type="checkbox" name="white" value="winner"> Winner had white pieces<br>
+        <input type="text" name="time_control" placeholder="Time Control">
+        <input type="submit" value="Record Game">
+    </form>
+</body>
+</html
