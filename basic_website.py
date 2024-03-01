@@ -5,6 +5,11 @@ from functions import add_1_ID, delete_player, Elo
 import datetime
 import pickle
 import datetime
+import argparse 
+
+args = argparse.ArgumentParser()
+args.add_argument("-remove", "--remove", help="Delete ladder // create new ladder", type=bool, default=False)
+
 
 # all credits for the Elo class go to ddm7018
 # https://github.com/ddm7018/Elo
@@ -73,8 +78,14 @@ class Player:
     def remove_from_elo_ladder(self, ladder):
         ladder.eloLeague.removePlayer(self.name)
 
-elo_ladder = Ladder()
-# elo_ladder = pickle.load(open("saved_ladders/elo_ladder.p", "rb"))
+if args.remove:
+    os.remove("saved_ladders/*")
+    elo_ladder = Ladder()
+else:
+    try:
+        elo_ladder = pickle.load(open("saved_ladders/elo_ladder.p", "rb"))
+    except:
+        elo_ladder = Ladder()
 # delete_player("Bjarne", elo_ladder)
 
 
