@@ -1,25 +1,86 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Play Game</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body { padding-top: 20px; }
+        .container { max-width: 600px; }
+        .form-group { margin-top: 20px; }
+    </style>
+    <script>
+        function updateWhiteOptions() {
+            const winner = document.getElementById('winner').value;
+            const loser = document.getElementById('loser').value;
+            const white = document.getElementById('white');
+            white.innerHTML = '<option value="">Optional</option>'; // Reset
+
+            if (winner) {
+                const winnerOption = document.createElement('option');
+                winnerOption.value = winner;
+                winnerOption.text = winner;
+                white.appendChild(winnerOption);
+            }
+
+            if (loser) {
+                const loserOption = document.createElement('option');
+                loserOption.value = loser;
+                loserOption.text = loser;
+                white.appendChild(loserOption);
+            }
+        }
+    </script>
 </head>
 <body>
-    <form action="/play_game" method="post">
-        <select name="winner" required>
-            <option value="">Select Winner</option>
-            {% for player in players %}
-            <option value="{{ player }}">{{ player }}</option>
-            {% endfor %}
-        </select>
-        <select name="loser" required>
-            <option value="">Select Loser</option>
-            {% for player in players %}
-            <option value="{{ player }}">{{ player }}</option>
-            {% endfor %}
-        </select>
-        <input type="checkbox" name="white" value="winner"> Winner had white pieces<br>
-        <input type="text" name="time_control" placeholder="Time Control">
-        <input type="submit" value="Record Game">
+<div class="container">
+    <h2 class="mb-4">Record Game</h2>
+    <form action="/play_game" method="post" class="needs-validation" novalidate>
+        <div class="form-group">
+            <label for="winner">Select Winner</label>
+            <select name="winner" id="winner" class="form-control" required onchange="updateWhiteOptions()">
+                <option value="">Select Winner</option>
+                {% for player in players %}
+                <option value="{{ player }}">{{ player }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="loser">Select Loser</label>
+            <select name="loser" id="loser" class="form-control" required onchange="updateWhiteOptions()">
+                <option value="">Select Loser</option>
+                {% for player in players %}
+                <option value="{{ player }}">{{ player }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <a class="btn btn-primary" data-toggle="collapse" href="#optionalFields" role="button" aria-expanded="false" aria-controls="optionalFields">
+            Optional Options
+        </a>
+        <div class="collapse" id="optionalFields">
+            <div class="form-group">
+                <label for="white">Who was playing with the White Pieces</label>
+                <select name="white" id="white" class="form-control">
+                    <option value="">Optional</option>
+                    <!-- Options will be dynamically added based on winner/loser selection -->
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="Time_control played">Time Control</label>
+                <input type="text" class="form-control" name="time_control" id="time_control" placeholder="Optional">
+            </div>
+        </div>
+        
+        <button type="submit" class="btn btn-primary">Record Game</button>
     </form>
+</div>
+
+<!-- Optional JavaScript; choose one of the two! -->
+<!-- Option 1: jQuery and Bootstrap Bundle (includes Popper) -->
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.2/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 </body>
-</html
+</html>
