@@ -8,7 +8,8 @@ import datetime
 import argparse 
 
 args = argparse.ArgumentParser()
-args.add_argument("-remove", "--remove", help="Delete ladder // create new ladder", type=bool, default=False)
+args.add_argument("-re", "--remove", help="Delete ladder // create new ladder", type=bool, default=False)
+args.add_argument("-r", "--run", help="Run the website - in development server env.", type=bool, default=True)
 args = args.parse_args()
 
 
@@ -30,6 +31,11 @@ class Ladder:
             print("Same person picked for winner and loser - restarting")
             return
 
+        # Ensure both winner and loser are part of the ladder
+        if winner not in [player.name for player in self.players] or loser not in [player.name for player in self.players]:
+            print("One or both players not found in the ladder")
+            return
+
         # Calculate old ratings
         winner_old_rating = self.eloLeague.ratingDict.get(winner, 1500)
         loser_old_rating = self.eloLeague.ratingDict.get(loser, 1500)
@@ -37,8 +43,10 @@ class Ladder:
         # Update Elo ratings
         self.eloLeague.gameOver(winner=winner, loser=loser, winnerHome=None)
         d = datetime.datetime.today().strftime("%d/%m/%Y")
+
         # Save game details in the ladder
-        self.gamesPlayed[self.game_id] = {
+        self.game_id = str(int(self.game_id) + 1).zfill(4)
+        game_details = {
             'game_id': self.game_id,
             'Date': str(d),
             'winner': winner,
@@ -50,14 +58,13 @@ class Ladder:
             'loser_new_elo': self.eloLeague.ratingDict[loser],
             'time_control': time_control,
         }
+        self.gamesPlayed[self.game_id] = game_details
 
-        # Increment game_id
-        self.game_id = str(int(self.game_id) + 1).zfill(4)
-
-        # Update player ratings
+        # Update player ratings and game history
         for player in self.players:
             if player.name == winner or player.name == loser:
                 player.rating = self.eloLeague.ratingDict[player.name]
+                player.gamesPlayed_IDS.append(self.game_id)
 
     def get_ladder(self):
         sortedRating = sorted(self.eloLeague.ratingDict.items(), key=lambda x: x[1], reverse=True)
@@ -152,5 +159,5 @@ def player_details(name):
     else:
         return f"No player found with the name {name}", 404
 
-if __name__ == '__main__':
+if __name__ == '__main__' and args.run:
     app.run(debug=True)
