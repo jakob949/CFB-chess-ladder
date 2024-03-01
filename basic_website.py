@@ -1,5 +1,5 @@
 # https://github.com/ddm7018/Elo
-# from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for
 # from functions import add_1_ID, delete_player, Elo
 import datetime
 import pickle
