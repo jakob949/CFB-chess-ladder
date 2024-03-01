@@ -1,38 +1,11 @@
 # https://github.com/ddm7018/Elo
 from flask import Flask, render_template, request, redirect, url_for
-from functions import add_1_ID, delete_player
+from functions import add_1_ID, delete_player, Elo
 import datetime
 import pickle
 import datetime
 
-class Elo:
-    def __init__(self, k, g=1, homefield=100):
-        self.ratingDict = {}
-        self.k = k
-        self.g = g
-        self.homefield = homefield
 
-    def addPlayer(self, name, rating=1500):
-        self.ratingDict[name] = rating
-
-    def gameOver(self, winner, loser, winnerHome=None):
-        if winnerHome is None:
-            winnerHome = False  # Assuming no home advantage if not specified
-        if winnerHome:
-            result = self.expectResult(self.ratingDict[winner] + self.homefield, self.ratingDict[loser])
-        else:
-            result = self.expectResult(self.ratingDict[winner], self.ratingDict[loser] + self.homefield)
-
-        self.ratingDict[winner] = self.ratingDict[winner] + (self.k * self.g) * (1 - result)
-        self.ratingDict[loser] = self.ratingDict[loser] + (self.k * self.g) * (0 - (1 - result))
-
-    def expectResult(self, p1, p2):
-        exp = (p2 - p1) / 400.0
-        return 1 / ((10.0 ** (exp)) + 1)
-
-    def removePlayer(self, name):
-        if name in self.ratingDict:
-            del self.ratingDict[name]
 
 class Ladder:
     def __init__(self, k=20, g=1):
@@ -99,11 +72,11 @@ class Player:
     def remove_from_elo_ladder(self, ladder):
         ladder.eloLeague.removePlayer(self.name)
 
-
+# elo_ladder = Ladder()
 elo_ladder = pickle.load(open("saved_ladders/elo_ladder.p", "rb"))
 # delete_player("Bjarne", elo_ladder)
-# print(elo_ladder.get_ladder())
-pickle.dump(elo_ladder, open("saved_ladders/elo_ladder.p", "wb"))
+
+
 
 app = Flask(__name__)
 @app.route('/', methods=['GET', 'POST'])
@@ -165,5 +138,8 @@ def player_details(name):
     else:
         return f"No player found with the name {name}", 404
 
-if __name__ == '__main__':
-    app.run(debug=True)
+# if __name__ == '__main__':
+#     app.run(debug=True)
+if __name__ == "__main__":
+    from waitress import serve
+    serve(app, host="0.0.0.0", port=8080)
