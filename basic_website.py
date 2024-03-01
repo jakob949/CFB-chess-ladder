@@ -107,8 +107,8 @@ class Player:
     def remove_from_elo_ladder(self, ladder):
         ladder.eloLeague.removePlayer(self.name)
 
-# elo_ladder = Ladder()
-elo_ladder = pickle.load(open("saved_ladders/elo_ladder.p", "rb"))
+elo_ladder = Ladder()
+# elo_ladder = pickle.load(open("saved_ladders/elo_ladder.p", "rb"))
 # delete_player("Bjarne", elo_ladder)
 
 
