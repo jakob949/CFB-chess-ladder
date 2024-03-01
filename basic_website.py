@@ -1,21 +1,51 @@
 # https://github.com/ddm7018/Elo
 from flask import Flask, render_template, request, redirect, url_for
-from elosports.elo import Elo
-from functions import add_1_ID
+from functions import add_1_ID, delete_player
 import datetime
+import pickle
+import datetime
+
+class Elo:
+    def __init__(self, k, g=1, homefield=100):
+        self.ratingDict = {}
+        self.k = k
+        self.g = g
+        self.homefield = homefield
+
+    def addPlayer(self, name, rating=1500):
+        self.ratingDict[name] = rating
+
+    def gameOver(self, winner, loser, winnerHome=None):
+        if winnerHome is None:
+            winnerHome = False  # Assuming no home advantage if not specified
+        if winnerHome:
+            result = self.expectResult(self.ratingDict[winner] + self.homefield, self.ratingDict[loser])
+        else:
+            result = self.expectResult(self.ratingDict[winner], self.ratingDict[loser] + self.homefield)
+
+        self.ratingDict[winner] = self.ratingDict[winner] + (self.k * self.g) * (1 - result)
+        self.ratingDict[loser] = self.ratingDict[loser] + (self.k * self.g) * (0 - (1 - result))
+
+    def expectResult(self, p1, p2):
+        exp = (p2 - p1) / 400.0
+        return 1 / ((10.0 ** (exp)) + 1)
+
+    def removePlayer(self, name):
+        if name in self.ratingDict:
+            del self.ratingDict[name]
 
 class Ladder:
     def __init__(self, k=20, g=1):
         self.eloLeague = Elo(k, g)
         self.players = []
-        self.gamesPlayed = {}  # Store details of all games played
+        self.gamesPlayed = {}
         self.game_id = "0000"
-    
+
     def add_player(self, player):
         self.players.append(player)
         player.add_to_elo_ladder(self)
 
-    def play_game(self, winner, loser, white=None, time_control=None,):
+    def play_game(self, winner, loser, white=None, time_control=None):
         if winner == loser:
             print("Same person picked for winner and loser - restarting")
             return
@@ -26,7 +56,7 @@ class Ladder:
 
         # Update Elo ratings
         self.eloLeague.gameOver(winner=winner, loser=loser, winnerHome=None)
-        d = datetime.date.today().strftime("%d/%m/%Y")
+        d = datetime.datetime.today().strftime("%d/%m/%Y")
         # Save game details in the ladder
         self.gamesPlayed[self.game_id] = {
             'game_id': self.game_id,
@@ -39,52 +69,43 @@ class Ladder:
             'loser_old_elo': loser_old_rating,
             'loser_new_elo': self.eloLeague.ratingDict[loser],
             'time_control': time_control,
-
         }
 
-        # Update players' game IDs
-        for player in self.players:
-            if player.name in [winner, loser]:
-                player.gamesPlayed_IDS.append(self.game_id)
+        # Increment game_id
+        self.game_id = str(int(self.game_id) + 1).zfill(4)
 
-        self.game_id = add_1_ID(self.game_id)
-        
-        winner_player = next((player for player in self.players if player.name == winner), None)
-        loser_player = next((player for player in self.players if player.name == loser), None)
-        if winner_player:
-            winner_player.rating = int(round(self.eloLeague.ratingDict[winner]))
-        if loser_player:
-            loser_player.rating = int(round(self.eloLeague.ratingDict[loser]))        
-        
+        # Update player ratings
+        for player in self.players:
+            if player.name == winner or player.name == loser:
+                player.rating = self.eloLeague.ratingDict[player.name]
 
     def get_ladder(self):
         sortedRating = sorted(self.eloLeague.ratingDict.items(), key=lambda x: x[1], reverse=True)
         return [(name, int(round(rating))) for name, rating in sortedRating]
 
+    def remove_player(self, player):
+        player.remove_from_elo_ladder(self)
+        self.players.remove(player)
+
 class Player:
     def __init__(self, name, rating=1500):
         self.name = name
         self.rating = rating
-        self.gamesPlayed_IDS = []  
-        rating_rounded = int(round(rating))
+        self.gamesPlayed_IDS = []
 
     def add_to_elo_ladder(self, ladder):
-        ladder.eloLeague.addPlayer(self.name, rating=self.rating)
+        ladder.eloLeague.addPlayer(self.name, self.rating)
 
+    def remove_from_elo_ladder(self, ladder):
+        ladder.eloLeague.removePlayer(self.name)
+
+
+elo_ladder = pickle.load(open("saved_ladders/elo_ladder.p", "rb"))
+# delete_player("Bjarne", elo_ladder)
+# print(elo_ladder.get_ladder())
+pickle.dump(elo_ladder, open("saved_ladders/elo_ladder.p", "wb"))
 
 app = Flask(__name__)
-
-# Initialize the ladder instance
-elo_ladder = Ladder()
-x1 = Player("Jakob")
-x2 = Player("Thomas")
-x3 = Player("Bjarne")
-elo_ladder.add_player(x1)
-elo_ladder.add_player(x2)
-elo_ladder.add_player(x3)
-elo_ladder.play_game("Jakob", "Thomas", "Jakob", "5+5")
-print(elo_ladder.gamesPlayed[elo_ladder.players[0].gamesPlayed_IDS[0]])
-print(elo_ladder.get_ladder())
 @app.route('/', methods=['GET', 'POST'])
 def home():
     if request.method == 'POST':
@@ -113,6 +134,7 @@ def add_player():
         rating = request.form.get('rating', 1500)
         new_player = Player(name, int(rating))
         elo_ladder.add_player(new_player)
+        pickle.dump(elo_ladder, open("saved_ladders/elo_ladder.p", "wb"))
         return redirect(url_for('home'))
     else:
         return render_template('add_player.html')
@@ -125,6 +147,7 @@ def play_game():
         white = request.form.get('white')
         time_control = request.form.get('time_control')
         elo_ladder.play_game(winner, loser, white, time_control)
+        pickle.dump(elo_ladder, open("saved_ladders/elo_ladder.p", "wb"))
         return redirect(url_for('home'))
     else:
         players = [player.name for player in elo_ladder.players]
