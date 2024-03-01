@@ -8,8 +8,8 @@ import datetime
 import argparse 
 
 args = argparse.ArgumentParser()
-args.add_argument("-re", "--remove", help="Delete ladder // create new ladder", type=bool, default=False)
-args.add_argument("-r", "--run", help="Run the website - in development server env.", type=bool, default=True)
+args.add_argument("-remove", "--remove", help="Delete ladder // create new ladder", type=bool, default=False)
+args.add_argument("-run", "--run", help="Run the website - in development server env.", type=bool, default=True)
 args = args.parse_args()
 
 
