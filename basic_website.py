@@ -9,6 +9,7 @@ import argparse
 
 args = argparse.ArgumentParser()
 args.add_argument("-remove", "--remove", help="Delete ladder // create new ladder", type=bool, default=False)
+args = args.parse_args()
 
 
 # all credits for the Elo class go to ddm7018
@@ -79,7 +80,8 @@ class Player:
         ladder.eloLeague.removePlayer(self.name)
 
 if args.remove:
-    os.remove("saved_ladders/*")
+    if os.path.exists("saved_ladders/elo_ladder.p"):
+        os.remove("saved_ladders/elo_ladder.p")
     elo_ladder = Ladder()
 else:
     try:
