@@ -182,7 +182,7 @@ def player_details(name):
     else:
         return f"No player found with the name {name}", 404
 
-if args.removegame is not "none:
+if args.removegame is not "none":
     game_id_to_remove = args.removegame
     elo_ladder.remove_game(game_id_to_remove)
     # Save the updated ladder state
