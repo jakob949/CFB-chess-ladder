@@ -10,6 +10,7 @@ import argparse
 args = argparse.ArgumentParser()
 args.add_argument("-remove", "--remove", help="Delete ladder // create new ladder", type=bool, default=False)
 args.add_argument("-run", "--run", help="Run the website - in development server env.", type=bool, default=True)
+args.add_argument("-rg", "--removegame", help="Remove a game by gameID", type=str, default = "none")
 args = args.parse_args()
 
 
@@ -65,7 +66,29 @@ class Ladder:
             if player.name == winner or player.name == loser:
                 player.rating = self.eloLeague.ratingDict[player.name]
                 player.gamesPlayed_IDS.append(self.game_id)
+    
+    def remove_game(self, game_id):
+        # Check if the game exists
+        if game_id not in self.gamesPlayed:
+            print("Game ID not found.")
+            return
 
+        game_details = self.gamesPlayed[game_id]
+
+        # Restore player ratings
+        winner, loser = game_details['winner'], game_details['loser']
+        self.eloLeague.ratingDict[winner] = game_details['winner_old_elo']
+        self.eloLeague.ratingDict[loser] = game_details['loser_old_elo']
+
+        # Update players' games played list
+        for player in self.players:
+            if game_id in player.gamesPlayed_IDS:
+                player.gamesPlayed_IDS.remove(game_id)
+                player.rating = self.eloLeague.ratingDict[player.name]
+
+        # Remove the game from the ladder
+        del self.gamesPlayed[game_id]
+    
     def get_ladder(self):
         sortedRating = sorted(self.eloLeague.ratingDict.items(), key=lambda x: x[1], reverse=True)
         return [(name, int(round(rating))) for name, rating in sortedRating]
@@ -158,6 +181,12 @@ def player_details(name):
         return render_template('player_details.html', player=player, games=games)
     else:
         return f"No player found with the name {name}", 404
+
+if args.removegame is not "none:
+    game_id_to_remove = args.removegame
+    elo_ladder.remove_game(game_id_to_remove)
+    # Save the updated ladder state
+    pickle.dump(elo_ladder, open("saved_ladders/elo_ladder.p", "wb"))
 
 if __name__ == '__main__' and args.run:
     app.run(debug=True)
