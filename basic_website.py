@@ -8,8 +8,8 @@ import datetime
 import argparse 
 
 args = argparse.ArgumentParser()
-args.add_argument("-remove", "--remove", help="Delete ladder // create new ladder", type=bool, default=False)
-args.add_argument("-run", "--run", help="Run the website - in development server env.", type=bool, default=True)
+args.add_argument("-re", "--remove", help="Delete ladder // create new ladder", type=bool, default=False)
+args.add_argument("-r", "--run", help="Run the website - in development server env.", type=bool, default=True)
 args.add_argument("-rg", "--removegame", help="Remove a game by gameID", type=str, default = "none")
 args = args.parse_args()
 
@@ -126,6 +126,7 @@ app = Flask(__name__)
 @app.route('/', methods=['GET', 'POST'])
 def home():
     if request.method == 'POST':
+        # Handle form submissions such as adding a player or recording a game
         if 'add_player' in request.form:
             name = request.form.get('name')
             rating = int(request.form.get('rating', 1500))
@@ -142,7 +143,12 @@ def home():
             elo_ladder.play_game(winner=winner, loser=loser, white=white, time_control=time_control, date=date)
         return redirect(url_for('home'))
     else:
-        return render_template('index.html', sortedRatingDict=elo_ladder.get_ladder(), players=elo_ladder.players)
+        # Prepare last 10 games
+        last_10_games = sorted(elo_ladder.gamesPlayed.items(), key=lambda x: x[0], reverse=True)[:len(elo_ladder.players)]
+        # Convert tuples back to dictionary for easier template processing
+        last_10_games_dict = {game_id: details for game_id, details in last_10_games}
+        # Render the template, passing both the sorted rating dictionary and the last 10 games
+        return render_template('index.html', sortedRatingDict=elo_ladder.get_ladder(), players=elo_ladder.players, last_10_games=last_10_games_dict)
 
 @app.route('/add_player', methods=['GET', 'POST'])
 def add_player():
