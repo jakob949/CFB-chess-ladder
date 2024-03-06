@@ -2,87 +2,86 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta viewport="width=device-width, initial-scale=1">
     <title>Elo Ratings</title>
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <style>
         body { padding-top: 20px; }
-        .container { max-width: 1200px; } /* Adjusted for wider layout */
-        .elo-rating-table, .last-games-table { margin-top: 20px; }
+        .container { max-width: 1200px; }
         .table { box-shadow: 0 5px 15px rgba(0,0,0,.1); }
         th { position: sticky; top: 0; background-color: #f8f9fa; }
-        .action-links { margin-top: 20px; }
-        .action-link { margin-right: 10px; } /* Add some spacing between the links */
+        .action-links { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; }
         .footer { margin-top: 20px; text-align: center; }
-        .footer a { color: #6c757d; } /* Match the grey color used elsewhere */
+        .footer a { color: #6c757d; }
+        #gamesPlayedSection { display: none; }
+        .show { display: block; }
+        .hide { display: none; }
     </style>
 </head>
 <body>
 <div class="container">
-    <div class="row">
-        <!-- Player Ladder Column -->
-        <div class="col-md-6">
+    <!-- Player Ladder Section -->
+    <div class="row justify-content-center">
+        <div class="col-md-12 col-lg-6" id="chessLadder">
             <h2 class="mb-4">Biosustains Chess Ladder</h2>
-            <div class="elo-rating-table">
-                <table class="table table-hover">
-                    <thead class="thead-light">
-                        <tr>
-                            <th scope="col">Player</th>
-                            <th scope="col">Rating</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for player, rating in sortedRatingDict %}
-                            <tr>
-                                <!-- Update the player's name to be a clickable link -->
-                                <td><a href="/player/{{ player }}">{{ player }}</a></td>
-                                <td>{{ rating }}</td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-                <!-- Action Links -->
-            <div class="action-links text-right">
-                <a href="/add_player" class="btn btn-primary action-link">Add New Player</a>
+            <table class="table table-hover">
+                <thead class="thead-light">
+                    <tr>
+                        <th scope="col">Player</th>
+                        <th scope="col">Rating</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Dynamic content should be loaded here -->
+                    
+                    {% for player, rating in sortedRatingDict %}
+                    <tr>
+                        <td><a href="/player/{{ player }}">{{ player }}</a></td>
+                        <td>{{ rating }}</td>
+                    </tr>
+                    {% endfor %}
+                    
+                    
+                </tbody>
+            </table>
+            <!-- Action Links and Toggle Button for Games Played -->
+            <div class="action-links">
+                <a href="/add_player" class="btn btn-primary">Add New Player</a>
                 <a href="/play_game" class="btn btn-secondary">Record Game</a>
+                <button class="btn btn-info" id="toggleGamesPlayedBtn" onclick="toggleGamesPlayed()">Show Games Played</button>
             </div>
         </div>
-        
-        <!-- Last 10 Games Column -->
-        <div class="col-md-6">
-            <h2 class="mb-4">Games Played</h2>
-            <div class="last-games-table">
-                <table class="table table-hover">
-                    <thead class="thead-light">
-                        <tr>
-                          <!--  <th scope="col">Game ID</th>-->
-                            <th scope="col">Winner</th>
-                            <th scope="col">Loser</th>
-                            <th scope="col">White</th> <!-- Added column for White Player -->
-                            <th scope="col">Time</th> 
-                            <th scope="col">Date</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for game_id, game in last_10_games.items() %}
-                            <tr>
-                              <!--  <td>{{ game_id }}</td>-->
-                                <td>{{ game.winner }}</td>
-                                <td>{{ game.loser }}</td>
-                                <td>{{ game.white }}</td>
-                                <td>{{ game.time_control }}</td>
-                                <td>{{ game.Date }}</td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
     </div>
-
+    <!-- Games Played Section -->
+    <div class="row justify-content-center mt-4" id="gamesPlayedSection">
+        <div class="col-md-12 col-lg-6">
+            <h2 class="mb-4">Games Played</h2>
+            <table class="table table-hover">
+                <thead class="thead-light">
+                    <tr>
+                        <th scope="col">Winner</th>
+                        <th scope="col">Loser</th>
+                        <th scope="col">White</th>
+                        <th scope="col">Time</th>
+                        <th scope="col">Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for game_id, game in last_10_games.items() %}
+                    <tr>
+                        <td>{{ game.winner }}</td>
+                        <td>{{ game.loser }}</td>
+                        <td>{{ game.white }}</td>
+                        <td>{{ game.time_control }}</td>
+                        <td>{{ game.Date }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                
+            </table>
+        </div>
+    </div>
     <!-- Footer Link -->
     <div class="footer">
         <a href="https://github.com/jakob949/CFB-chess-ladder">Visit GitHub repository</a>
@@ -90,9 +89,22 @@
 </div>
 
 <!-- Optional JavaScript -->
-<!-- jQuery first, then Popper.js, then Bootstrap JS -->
+<!-- jQuery, Popper.js, Bootstrap JS -->
 <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.2/dist/popper.min.js"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+<script>
+    function toggleGamesPlayed() {
+        var gamesPlayedSection = document.getElementById("gamesPlayedSection");
+        var button = document.getElementById("toggleGamesPlayedBtn");
+        if (gamesPlayedSection.style.display === "none" || gamesPlayedSection.style.display === "") {
+            gamesPlayedSection.style.display = "block";
+            button.textContent = "Hide Games Played";
+        } else {
+            gamesPlayedSection.style.display = "none";
+            button.textContent = "Show Games Played";
+        }
+    }
+</script>
 </body>
 </html>
