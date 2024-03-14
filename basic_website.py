@@ -1,10 +1,9 @@
 import os 
 os.chdir(os.path.dirname(__file__))
 from flask import Flask, render_template, request, redirect, url_for
-from functions import add_1_ID, delete_player, Elo
+from functions import add_1_ID, delete_player, Elo, is_correct_answer, Ladder, Player
 import datetime
 import pickle
-import datetime
 import argparse 
 
 args = argparse.ArgumentParser()
@@ -12,102 +11,6 @@ args.add_argument("-re", "--remove", help="Delete ladder // create new ladder", 
 args.add_argument("-r", "--run", help="Run the website - in development server env.", type=bool, default=True)
 args.add_argument("-rg", "--removegame", help="Remove a game by gameID", type=str, default = "none")
 args = args.parse_args()
-
-
-# all credits for the Elo class go to ddm7018
-# https://github.com/ddm7018/Elo
-class Ladder:
-    def __init__(self, k=20, g=1):
-        self.eloLeague = Elo(k, g)
-        self.players = []
-        self.gamesPlayed = {}
-        self.game_id = "0000"
-
-    def add_player(self, player):
-        self.players.append(player)
-        player.add_to_elo_ladder(self)
-
-    def play_game(self, winner, loser, white=None, time_control=None):
-        if winner == loser:
-            print("Same person picked for winner and loser - restarting")
-            return
-
-        # Ensure both winner and loser are part of the ladder
-        if winner not in [player.name for player in self.players] or loser not in [player.name for player in self.players]:
-            print("One or both players not found in the ladder")
-            return
-
-        # Calculate old ratings
-        winner_old_rating = self.eloLeague.ratingDict.get(winner, 1500)
-        loser_old_rating = self.eloLeague.ratingDict.get(loser, 1500)
-
-        # Update Elo ratings
-        self.eloLeague.gameOver(winner=winner, loser=loser, winnerHome=None)
-        d = datetime.datetime.today().strftime("%d/%m/%Y")
-
-        # Save game details in the ladder
-        self.game_id = str(int(self.game_id) + 1).zfill(4)
-        game_details = {
-            'game_id': self.game_id,
-            'Date': str(d),
-            'winner': winner,
-            'loser': loser,
-            'white': white,
-            'winner_old_elo': winner_old_rating,
-            'winner_new_elo': self.eloLeague.ratingDict[winner],
-            'loser_old_elo': loser_old_rating,
-            'loser_new_elo': self.eloLeague.ratingDict[loser],
-            'time_control': time_control,
-        }
-        self.gamesPlayed[self.game_id] = game_details
-
-        # Update player ratings and game history
-        for player in self.players:
-            if player.name == winner or player.name == loser:
-                player.rating = self.eloLeague.ratingDict[player.name]
-                player.gamesPlayed_IDS.append(self.game_id)
-    
-    def remove_game(self, game_id):
-        # Check if the game exists
-        if game_id not in self.gamesPlayed:
-            print("Game ID not found.")
-            return
-
-        game_details = self.gamesPlayed[game_id]
-
-        # Restore player ratings
-        winner, loser = game_details['winner'], game_details['loser']
-        self.eloLeague.ratingDict[winner] = game_details['winner_old_elo']
-        self.eloLeague.ratingDict[loser] = game_details['loser_old_elo']
-
-        # Update players' games played list
-        for player in self.players:
-            if game_id in player.gamesPlayed_IDS:
-                player.gamesPlayed_IDS.remove(game_id)
-                player.rating = self.eloLeague.ratingDict[player.name]
-
-        # Remove the game from the ladder
-        del self.gamesPlayed[game_id]
-    
-    def get_ladder(self):
-        sortedRating = sorted(self.eloLeague.ratingDict.items(), key=lambda x: x[1], reverse=True)
-        return [(name, int(round(rating))) for name, rating in sortedRating]
-
-    def remove_player(self, player):
-        player.remove_from_elo_ladder(self)
-        self.players.remove(player)
-
-class Player:
-    def __init__(self, name, rating=1500):
-        self.name = name
-        self.rating = rating
-        self.gamesPlayed_IDS = []
-
-    def add_to_elo_ladder(self, ladder):
-        ladder.eloLeague.addPlayer(self.name, self.rating)
-
-    def remove_from_elo_ladder(self, ladder):
-        ladder.eloLeague.removePlayer(self.name)
 
 if args.remove:
     if os.path.exists("saved_ladders/elo_ladder.p"):
@@ -118,9 +21,17 @@ else:
         elo_ladder = pickle.load(open("saved_ladders/elo_ladder.p", "rb"))
     except:
         elo_ladder = Ladder()
-# delete_player("Bjarne", elo_ladder)
 
-
+# loading the variantions from the pickle file
+try:
+    with open("variations.pkl", "rb") as f:
+        variations_correct = pickle.load(f)
+    correct_answer = variations_correct[0]
+    variantions = variations_correct[1]
+except:
+    print("No variations file found => The purpose of this is to ask for a password when using the website. "
+            "If you don't want to use this feature, you can ignore this message.")
+    variations_correct = "None"
 
 app = Flask(__name__)
 @app.route('/', methods=['GET', 'POST'])
@@ -164,14 +75,22 @@ def add_player():
 
 @app.route('/play_game', methods=['GET', 'POST'])
 def play_game():
+    # Assuming 'elo_ladder', 'variantions', and 'correct_answer' are defined correctly elsewhere
+
     if request.method == 'POST':
-        winner = request.form['winner']
-        loser = request.form['loser']
-        white = request.form.get('white')
-        time_control = request.form.get('time_control')
-        elo_ladder.play_game(winner, loser, white, time_control)
-        pickle.dump(elo_ladder, open("saved_ladders/elo_ladder.p", "wb"))
-        return redirect(url_for('home'))
+        if is_correct_answer(user_input=request.form.get('password'), variations=variantions, correct_answer=correct_answer, threshold=50):
+            winner = request.form['winner']
+            loser = request.form['loser']
+            white = request.form.get('white', '')
+            time_control = request.form.get('time_control', '')
+            # Assuming 'elo_ladder' is a previously defined object with a play_game method
+            elo_ladder.play_game(winner, loser, white, time_control)
+            pickle.dump(elo_ladder, open("saved_ladders/elo_ladder.p", "wb"))
+            return redirect(url_for('home'))
+        else:
+            players = [player.name for player in elo_ladder.players]
+            error_message = "The password is incorrect. Hint: The guy who sends emails out."
+            return render_template('play_game.html', players=players, error_message=error_message)
     else:
         players = [player.name for player in elo_ladder.players]
         return render_template('play_game.html', players=players)

@@ -31,12 +31,32 @@
                 white.appendChild(loserOption);
             }
         }
+
+        // Function to handle the Record Game button click
+        function handleRecordGameClick(event) {
+            event.preventDefault(); // Prevent form submission
+
+            // Ask for the password
+            var password = prompt("Who is the president of the Chess club?", "");
+
+            // Set the password in the hidden field
+            document.getElementById('passwordField').value = password;
+
+            // Submit the form
+            document.getElementById('recordGameForm').submit();
+        }
     </script>
 </head>
 <body>
 <div class="container">
     <h2 class="mb-4">Record Game</h2>
-    <form action="/play_game" method="post" class="needs-validation" novalidate>
+    {% if error_message %}
+    <div class="alert alert-danger" role="alert">
+        {{ error_message }}
+    </div>
+    {% endif %}
+
+    <form action="/play_game" method="post" class="needs-validation" novalidate id="recordGameForm">
         <div class="form-group">
             <label for="winner">Select Winner</label>
             <select name="winner" id="winner" class="form-control" required onchange="updateWhiteOptions()">
@@ -73,12 +93,12 @@
             </div>
         </div>
         
-        <button type="submit" class="btn btn-primary">Record Game</button>
+        <input type="hidden" id="passwordField" name="password" value="">
+        <button type="button" class="btn btn-primary" onclick="handleRecordGameClick(event)">Record Game</button>
+        <a href="/" class="btn btn-secondary">Return to Ladder</a>
     </form>
 </div>
 
-<!-- Optional JavaScript; choose one of the two! -->
-<!-- Option 1: jQuery and Bootstrap Bundle (includes Popper) -->
 <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.2/dist/umd/popper.min.js"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
