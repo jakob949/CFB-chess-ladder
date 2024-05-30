@@ -53,11 +53,18 @@
     <ul>
         {% for game in games %}
         <li>
+            {% if game.draw %}
+            <strong>Draw</strong> with 
             {% if game.winner == player.name %}
-            <strong>Won</strong> against {{ game.loser }} on {{ game.Date }}<small> - Time Control: {{ game.time_control }} - White pieces: {{ game.white }} - Game ID: {{ game.game_id}}</small>
+            {{ game.loser }}
+            {% else %}
+            {{ game.winner }}
+            {% endif %}
+            on {{ game.Date }}<small> - Time Control: {{ game.time_control }} - White pieces: {{ game.white }} - Game ID: {{ game.game_id }}</small>
+            {% elif game.winner == player.name %}
+            <strong>Won</strong> against {{ game.loser }} on {{ game.Date }}<small> - Time Control: {{ game.time_control }} - White pieces: {{ game.white }} - Game ID: {{ game.game_id }}</small>
             {% else %}
             <strong>Defeat.</strong> to {{ game.winner }} on {{ game.Date }}<small> - Time Control: {{ game.time_control }} - White pieces: {{ game.white }} - Game ID: {{ game.game_id }}</small>
-
             {% endif %}
         </li>
         {% endfor %}

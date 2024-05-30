@@ -75,6 +75,11 @@
                 {% endfor %}
             </select>
         </div>
+
+        <div class="form-group form-check">
+            <input type="checkbox" class="form-check-input" id="draw" name="draw">
+            <label class="form-check-label" for="draw">Game was a draw</label>
+        </div>
         
         <a class="btn btn-primary" data-toggle="collapse" href="#optionalFields" role="button" aria-expanded="false" aria-controls="optionalFields">
             Optional Options
@@ -88,7 +93,7 @@
                 </select>
             </div>
             <div class="form-group">
-                <label for="Time_control played">Time Control</label>
+                <label for="time_control">Time Control</label>
                 <input type="text" class="form-control" name="time_control" id="time_control" placeholder="Optional">
             </div>
         </div>

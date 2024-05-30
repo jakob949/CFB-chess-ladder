@@ -50,8 +50,8 @@ def home():
             white = request.form.get('white') if 'white' in request.form else None
             time_control = request.form.get('time_control')
             date = request.form.get('Date')
-            print(date)
-            elo_ladder.play_game(winner=winner, loser=loser, white=white, time_control=time_control, date=date)
+            draw = 'draw' in request.form  # Check if the draw option was selected
+            elo_ladder.play_game(winner=winner, loser=loser, white=white, time_control=time_control, date=date, draw=draw)
         return redirect(url_for('home'))
     else:
         # Prepare last 10 games
@@ -83,8 +83,9 @@ def play_game():
             loser = request.form['loser']
             white = request.form.get('white', '')
             time_control = request.form.get('time_control', '')
+            draw = 'draw' in request.form  # Check if the draw option was selected
             # Assuming 'elo_ladder' is a previously defined object with a play_game method
-            elo_ladder.play_game(winner, loser, white, time_control)
+            elo_ladder.play_game(winner, loser, white, time_control, draw=draw)
             pickle.dump(elo_ladder, open("saved_ladders/elo_ladder.p", "wb"))
             return redirect(url_for('home'))
         else:
@@ -106,6 +107,8 @@ def player_details(name):
         return render_template('player_details.html', player=player, games=games)
     else:
         return f"No player found with the name {name}", 404
+
+
 
 if args.removegame is not "none":
     game_id_to_remove = args.removegame

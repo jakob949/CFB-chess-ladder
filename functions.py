@@ -1,8 +1,6 @@
 from fuzzywuzzy import fuzz
 import datetime
 
-# delete_player("Bjarne", elo_ladder)
-
 def add_1_ID(s_id):
     return str(int(s_id) + 1).zfill(len(s_id))
 
@@ -11,7 +9,7 @@ def delete_player(player_to_remove, ladder):
     if player_to_remove is not None:
         ladder.remove_player(player_to_remove)
 
-def is_correct_answer(user_input, correct_answer="None", variations="None", threshold=70):
+def is_correct_answer(user_input, correct_answer="None", variations="None", threshold=40):
     if correct_answer == "None" or variations == "None":
         return False
     user_input = user_input.lower().strip()
@@ -41,7 +39,7 @@ class Ladder:
         self.players.append(player)
         player.add_to_elo_ladder(self)
 
-    def play_game(self, winner, loser, white=None, time_control=None):
+    def play_game(self, winner, loser, white=None, time_control=None, draw=False):
         if winner == loser:
             print("Same person picked for winner and loser - restarting")
             return
@@ -56,7 +54,7 @@ class Ladder:
         loser_old_rating = self.eloLeague.ratingDict.get(loser, 1500)
 
         # Update Elo ratings
-        self.eloLeague.gameOver(winner=winner, loser=loser, winnerHome=None)
+        self.eloLeague.gameOver(player1=winner, player2=loser, draw=draw)
         d = datetime.datetime.today().strftime("%d/%m/%Y")
 
         # Save game details in the ladder
@@ -72,6 +70,7 @@ class Ladder:
             'loser_old_elo': loser_old_rating,
             'loser_new_elo': self.eloLeague.ratingDict[loser],
             'time_control': time_control,
+            'draw': draw
         }
         self.gamesPlayed[self.game_id] = game_details
 
@@ -124,29 +123,30 @@ class Player:
         ladder.eloLeague.removePlayer(self.name)
 
 class Elo:
-    def __init__(self, k, g=1, homefield=100):
+    def __init__(self, k, g=1):
         self.ratingDict = {}
         self.k = k
         self.g = g
-        self.homefield = homefield
 
     def addPlayer(self, name, rating=1500):
         self.ratingDict[name] = rating
 
-    def gameOver(self, winner, loser, winnerHome=None):
-        if winnerHome is None:
-            winnerHome = False  # Assuming no home advantage if not specified
-        if winnerHome:
-            result = self.expectResult(self.ratingDict[winner] + self.homefield, self.ratingDict[loser])
-        else:
-            result = self.expectResult(self.ratingDict[winner], self.ratingDict[loser] + self.homefield)
+    def gameOver(self, player1, player2, draw=False):
+        if draw:
+            result_p1 = self.expectResult(self.ratingDict[player1], self.ratingDict[player2])
+            result_p2 = self.expectResult(self.ratingDict[player2], self.ratingDict[player1])
 
-        self.ratingDict[winner] = self.ratingDict[winner] + (self.k * self.g) * (1 - result)
-        self.ratingDict[loser] = self.ratingDict[loser] + (self.k * self.g) * (0 - (1 - result))
+            self.ratingDict[player1] += self.k * self.g * (0.5 - result_p1)
+            self.ratingDict[player2] += self.k * self.g * (0.5 - result_p2)
+        else:
+            result = self.expectResult(self.ratingDict[player1], self.ratingDict[player2])
+
+            self.ratingDict[player1] += self.k * self.g * (1 - result)
+            self.ratingDict[player2] += self.k * self.g * (0 - (1 - result))
 
     def expectResult(self, p1, p2):
         exp = (p2 - p1) / 400.0
-        return 1 / ((10.0 ** (exp)) + 1)
+        return 1 / (1 + 10.0 ** exp)
 
     def removePlayer(self, name):
         if name in self.ratingDict:
